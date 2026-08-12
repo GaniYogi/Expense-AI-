@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — ExpenseAI</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════════════════════ -->
+<aside id="sidebar">
+
+    <!-- Brand -->
+    <div class="brand">
+        <div class="brand-icon">💸</div>
+        <span class="brand-name">ExpenseAI</span>
+    </div>
+
+    <!-- Nav -->
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+
+        <button class="nav-item active" data-section="overview">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Overview</span>
+        </button>
+
+        <button class="nav-item" data-section="transactions">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Transactions</span>
+        </button>
+
+        <button class="nav-item" data-section="reports">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">Reports</span>
+        </button>
+
+        <div class="sidebar-divider"></div>
+        <div class="nav-section-label">Tools</div>
+
+        <button class="nav-item" data-section="sms">
+            <span class="nav-icon">📱</span>
+            <span class="nav-label">SMS Parser</span>
+        </button>
+
+        <button class="nav-item" data-section="budget">
+            <span class="nav-icon">🎯</span>
+            <span class="nav-label">Budget</span>
+        </button>
+    </nav>
+
+    <!-- User / Logout -->
+    <div class="user-section">
+        <div class="user-card">
+            <div class="user-avatar" id="user-avatar-text">G</div>
+            <div class="user-info-text">
+                <div class="user-name" id="sidebar-username">User</div>
+                <div class="user-role">Member</div>
+            </div>
+        </div>
+        <button class="btn-logout" id="logout-btn">🚪 Sign Out</button>
+    </div>
+
+</aside>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     MAIN
+════════════════════════════════════════════════════════════ -->
+<main id="main">
+
+    <!-- ── Top Header ── -->
+    <header class="top-header">
+        <div class="header-left">
+            <div class="page-title" id="page-title">Dashboard Overview</div>
+            <div class="header-date" id="header-date"></div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="export-btn">⬇️ Export CSV</button>
+            <button class="btn btn-primary" id="add-expense-btn">+ Add Expense</button>
+        </div>
+    </header>
+
+    <div class="content">
+
+        <!-- ════════════════════════════════════════════════════
+             SECTION: OVERVIEW
+        ════════════════════════════════════════════════════ -->
+        <section id="section-overview" class="section active">
+
+            <!-- Stat Cards -->
+            <div class="stats-grid">
+                <div class="stat-card stat-card-1">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-label">Total Spent (All Time)</div>
+                    <div class="stat-value" id="stat-total">₹0</div>
+                    <div class="stat-sub" id="stat-total-sub">All expenses combined</div>
+                </div>
+                <div class="stat-card stat-card-2">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-label">This Month</div>
+                    <div class="stat-value" id="stat-month">₹0</div>
+                    <div class="stat-sub" id="stat-budget-sub">No budget set</div>
+                </div>
+                <div class="stat-card stat-card-3">
+                    <div class="stat-icon">🧾</div>
+                    <div class="stat-label">Total Transactions</div>
+                    <div class="stat-value" id="stat-count">0</div>
+                    <div class="stat-sub" id="stat-count-sub">expenses recorded</div>
+                </div>
+                <div class="stat-card stat-card-4">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-label">Top Category</div>
+                    <div class="stat-value" style="font-size:1.1rem" id="stat-top">—</div>
+                    <div class="stat-sub" id="stat-top-sub">highest spending</div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+
+                <!-- Pie Chart -->
+                <div class="card">
+                    <div class="card-title">
+                        Category Breakdown
+                        <span class="subtitle" id="pie-subtitle">All time</span>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="pie-chart"></canvas>
+                        <div id="pie-empty" class="empty-state hidden">
+                            <div class="ei">🍩</div>
+                            <h3>No data yet</h3>
+                            <p>Add your first expense to see categories</p>
+                        </div>
+                    </div>
+                    <div class="legend-list" id="pie-legend"></div>
+                </div>
+
+                <!-- Bar Chart -->
+                <div class="card">
+                    <div class="card-title">
+                        Monthly Spending Trend
+                        <span class="subtitle">Last 6 months</span>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="bar-chart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="card">
+                <div class="card-title">
+                    Recent Transactions
+                    <button class="btn btn-secondary btn-sm" onclick="navigate('transactions')">View All →</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-tbody">
+                            <tr><td colspan="4"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ════════════════════════════════════════════════════
+             SECTION: TRANSACTIONS
+        ════════════════════════════════════════════════════ -->
+        <section id="section-transactions" class="section">
+
+            <div class="section-header">
+                <div class="section-title">All Transactions</div>
+                <button class="btn btn-primary" id="add-expense-btn-2">+ Add Expense</button>
+            </div>
+
+            <div class="card">
+                <div class="table-toolbar">
+                    <div class="search-box">
+                        <span>🔍</span>
+                        <input type="text" id="search-input" placeholder="Search expenses...">
+                    </div>
+                    <select class="filter-select" id="filter-category">
+                        <option value="">All Categories</option>
+                        <option>Food &amp; Dining</option>
+                        <option>Transport</option>
+                        <option>Shopping</option>
+                        <option>Entertainment</option>
+                        <option>Health</option>
+                        <option>Utilities</option>
+                        <option>Education</option>
+                        <option>Housing</option>
+                        <option>Subscriptions</option>
+                        <option>Other</option>
+                    </select>
+                    <button class="btn btn-secondary btn-sm" id="export-btn-2">⬇️ CSV</button>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-tbody">
+                            <tr><td colspan="5"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ════════════════════════════════════════════════════
+             SECTION: REPORTS
+        ════════════════════════════════════════════════════ -->
+        <section id="section-reports" class="section">
+
+            <div class="section-header">
+                <div class="section-title">Reports &amp; Analytics</div>
+            </div>
+
+            <div class="reports-grid">
+                <div class="card">
+                    <div class="card-title">This Month — Category Split</div>
+                    <div class="chart-wrap">
+                        <canvas id="report-pie-chart"></canvas>
+                    </div>
+                    <div class="legend-list" id="report-pie-legend"></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">6-Month Trend</div>
+                    <div class="chart-wrap" style="height:240px">
+                        <canvas id="report-bar-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Monthly Summary Table</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>This Month</th>
+                                <th>All Time</th>
+                                <th>% of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ════════════════════════════════════════════════════
+             SECTION: SMS PARSER
+        ════════════════════════════════════════════════════ -->
+        <section id="section-sms" class="section">
+
+            <div class="section-header">
+                <div class="section-title">📱 SMS Expense Parser</div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+                <div class="card">
+                    <div class="card-title">Paste Your Bank SMS</div>
+                    <div class="form-group">
+                        <label>SMS Message</label>
+                        <textarea id="sms-input" rows="5" placeholder="Paste your bank SMS here...&#10;&#10;Example: Your account has been debited Rs. 500 for purchase at Swiggy. Available balance: Rs. 12,500."></textarea>
+                    </div>
+                    <button class="btn btn-primary w-full" id="parse-sms-btn" style="width:100%">🔍 Parse SMS</button>
+
+                    <div class="sms-result" id="sms-result">
+                        <div class="sms-detected">
+                            <div class="sms-det-item">
+                                <div class="sms-det-label">Detected Amount</div>
+                                <div class="sms-det-value" id="sms-amount">₹0</div>
+                            </div>
+                            <div class="sms-det-item">
+                                <div class="sms-det-label">Category</div>
+                                <div class="sms-det-value" id="sms-category">—</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" style="width:100%" id="add-sms-expense-btn">✅ Add as Expense</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">How It Works</div>
+                    <div style="display:flex;flex-direction:column;gap:14px;color:var(--text2);font-size:0.86rem;line-height:1.6">
+                        <div style="display:flex;gap:12px;align-items:flex-start">
+                            <span style="font-size:1.4rem">1️⃣</span>
+                            <div><strong style="color:var(--text)">Copy your bank SMS</strong><br>Get a debit/payment notification from your bank app or messages.</div>
+                        </div>
+                        <div style="display:flex;gap:12px;align-items:flex-start">
+                            <span style="font-size:1.4rem">2️⃣</span>
+                            <div><strong style="color:var(--text)">Paste &amp; Parse</strong><br>Paste the SMS and click "Parse SMS" — it auto-detects the amount and category.</div>
+                        </div>
+                        <div style="display:flex;gap:12px;align-items:flex-start">
+                            <span style="font-size:1.4rem">3️⃣</span>
+                            <div><strong style="color:var(--text)">Add to Expenses</strong><br>Review the detected info and click "Add as Expense" to save it.</div>
+                        </div>
+                        <div style="background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.14);border-radius:10px;padding:12px">
+                            <strong style="color:#a5b4fc">💡 Supported Banks:</strong><br>
+                            HDFC, SBI, ICICI, Axis, Kotak, Paytm, PhonePe, GPay, UPI payments and more.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ════════════════════════════════════════════════════
+             SECTION: BUDGET
+        ════════════════════════════════════════════════════ -->
+        <section id="section-budget" class="section">
+
+            <div class="section-header">
+                <div class="section-title">🎯 Budget Management</div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+                <div class="card">
+                    <div class="card-title">Monthly Budget</div>
+
+                    <div class="budget-meta">
+                        <div class="budget-stat">
+                            <div class="budget-stat-label">Budget</div>
+                            <div class="budget-stat-value" id="budget-display-amount">—</div>
+                        </div>
+                        <div class="budget-stat">
+                            <div class="budget-stat-label">Spent</div>
+                            <div class="budget-stat-value" id="budget-spent">₹0</div>
+                        </div>
+                        <div class="budget-stat">
+                            <div class="budget-stat-label">Remaining</div>
+                            <div class="budget-stat-value" id="budget-remaining-val">—</div>
+                        </div>
+                    </div>
+
+                    <div class="progress-wrap">
+                        <div class="progress-label">
+                            <span id="budget-pct">—</span>
+                            <span id="budget-remaining"></span>
+                        </div>
+                        <div class="progress-bg">
+                            <div class="progress-fill safe" id="budget-fill" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="budget-tip" id="budget-tip">
+                        💡 Set a monthly budget below to start tracking your spending.
+                    </div>
+
+                    <form id="budget-form" style="margin-top:18px">
+                        <div class="form-group">
+                            <label>Set Monthly Budget (₹)</label>
+                            <input type="number" id="budget-input" placeholder="e.g. 30000" min="0" step="100">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%">💾 Save Budget</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Spending Insights</div>
+                    <div id="budget-insights" style="color:var(--text3);font-size:0.86rem">
+                        <div class="empty-state">
+                            <div class="ei">🎯</div>
+                            <h3>Set a budget first</h3>
+                            <p>Add expenses to see your spending insights here</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </div><!-- /content -->
+</main>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     ADD / EDIT EXPENSE MODAL
+════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="expense-modal">
+    <div class="modal-box" id="modal-box-inner">
+        <div class="modal-header">
+            <div class="modal-title" id="modal-title">➕ Add Expense</div>
+            <button class="modal-close" id="modal-close-btn">✕</button>
+        </div>
+
+        <form id="expense-form" autocomplete="off">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Amount (₹) *</label>
+                    <input type="number" id="expense-amount" placeholder="0.00" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="expense-date">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Category</label>
+                <select id="expense-category">
+                    <option value="Food &amp; Dining">🍔 Food &amp; Dining</option>
+                    <option value="Transport">🚗 Transport</option>
+                    <option value="Shopping">🛍️ Shopping</option>
+                    <option value="Entertainment">🎮 Entertainment</option>
+                    <option value="Health">💊 Health</option>
+                    <option value="Utilities">⚡ Utilities</option>
+                    <option value="Education">📚 Education</option>
+                    <option value="Housing">🏠 Housing</option>
+                    <option value="Subscriptions">📱 Subscriptions</option>
+                    <option value="Other">💼 Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    Description
+                    <span class="ai-label" id="ai-category-badge" style="display:none"></span>
+                </label>
+                <div class="desc-row">
+                    <textarea id="expense-description" placeholder="What did you spend on? (optional — AI can categorize from this)" rows="2"></textarea>
+                    <button type="button" class="btn btn-ai btn-sm" id="ai-btn" title="Let AI pick the best category from your description" style="white-space:nowrap;align-self:flex-end">✨ AI</button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px;padding:12px" id="submit-expense-btn">
+                💾 Save Expense
+            </button>
+
+        </form>
+    </div>
+</div>
+
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+
+<script src="dashboard.js"></script>
+</body>
+</html>
