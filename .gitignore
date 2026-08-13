@@ -1,0 +1,22 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Node dependencies
+node_modules/
+
+# Python virtual environment & bytecode cache
+venv/
+ai-service/venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# OS metadata files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log

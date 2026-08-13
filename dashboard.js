@@ -67,6 +67,7 @@ async function apiPost(path, data) {
         headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
+    if (r.status === 401 || r.status === 403) { logout(); throw new Error('Session expired'); }
     return r.json();
 }
 async function apiPut(path, data) {
@@ -131,7 +132,7 @@ async function init() {
     document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
 
     // Load data
-    await Promise.all([loadStats(), loadExpenses()]);
+    await Promise.all([loadStats(), loadExpenses(), loadAnomalies(), loadForecast(), loadInsights()]);
 }
 
 async function loadStats() {
@@ -152,6 +153,241 @@ async function loadExpenses() {
         renderRecentTransactions(expenses.slice(0, 8));
         renderFullTransactions(expenses);
     } catch (err) { console.error('Expenses error:', err); }
+}
+
+// ─── ANOMALY DETECTION (ISOLATION FOREST) ─────────────────────────────────────
+async function loadAnomalies() {
+    const container = document.getElementById('ai-anomalies-container');
+    if (!container) return;
+
+    try {
+        const res = await apiGet('/api/ai/anomalies');
+        
+        if (res.status === 'insufficient_data') {
+            container.innerHTML = `
+                <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;color:#c7d2fe">
+                    <span style="font-size:1.5rem">ℹ️</span>
+                    <div>
+                        <strong style="color:#e0e7ff;font-size:0.92rem">Not enough spending history yet</strong>
+                        <div style="font-size:0.83rem;margin-top:2px;color:var(--text2)">${res.message || 'Add more expenses (at least 10) to enable AI unusual spending detection.'}</div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        if (res.error) {
+            container.innerHTML = `
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px;color:#fca5a5;font-size:0.86rem">
+                    ${res.error}
+                </div>
+            `;
+            return;
+        }
+
+        if (!res.anomalies || res.anomalies.length === 0) {
+            container.innerHTML = `
+                <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;color:#6ee7b7">
+                    <span style="font-size:1.5rem">✅</span>
+                    <div>
+                        <strong style="color:#a7f3d0;font-size:0.92rem">No unusual spending detected</strong>
+                        <div style="font-size:0.83rem;margin-top:2px;color:var(--text2)">Your recent spending looks consistent with your normal pattern.</div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const sevBadgeMap = {
+            high:   '<span style="background:rgba(239,68,68,0.2);color:#ef4444;border:1px solid rgba(239,68,68,0.4);font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:10px">🔴 HIGH ANOMALY</span>',
+            medium: '<span style="background:rgba(245,158,11,0.2);color:#f59e0b;border:1px solid rgba(245,158,11,0.4);font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:10px">🟠 MEDIUM ANOMALY</span>',
+            low:    '<span style="background:rgba(234,179,8,0.2);color:#eab308;border:1px solid rgba(234,179,8,0.4);font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:10px">🟡 UNUSUAL</span>'
+        };
+
+        container.innerHTML = res.anomalies.map(item => `
+            <div style="background:rgba(30,41,59,0.7);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <strong style="color:var(--text);font-size:0.95rem">${item.merchant || item.category}</strong>
+                        <span style="font-size:0.82rem;color:var(--text3)">(${item.category})</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <strong style="color:#ef4444;font-size:1.05rem">₹${fmt(item.amount)}</strong>
+                        ${sevBadgeMap[item.severity] || sevBadgeMap.medium}
+                    </div>
+                </div>
+                <div style="font-size:0.85rem;color:var(--text2);line-height:1.4;background:rgba(15,23,42,0.6);padding:8px 12px;border-radius:6px;border-left:3px solid #ef4444">
+                    💡 <strong>AI Analysis:</strong> ${item.reason}
+                </div>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        container.innerHTML = `
+            <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px;color:#fca5a5;font-size:0.86rem">
+                ⚠️ AI spending analysis is currently unavailable.
+            </div>
+        `;
+    }
+}
+
+// ─── FINANCIAL INSIGHTS & RECOMMENDATIONS (PHASE 5) ───────────────────────────
+async function loadInsights() {
+    const container = document.getElementById('ai-insights-container');
+    if (!container) return;
+
+    try {
+        const res = await apiGet('/api/ai/insights');
+
+        if (res.status === 'insufficient_data') {
+            container.innerHTML = `
+                <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;color:#c7d2fe">
+                    <span style="font-size:1.5rem">ℹ️</span>
+                    <div>
+                        <strong style="color:#e0e7ff;font-size:0.92rem">Keep tracking your expenses</strong>
+                        <div style="font-size:0.83rem;margin-top:2px;color:var(--text2)">${res.message || 'AI financial insights will become more useful as you add more spending history.'}</div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        if (res.error) {
+            container.innerHTML = `
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px;color:#fca5a5;font-size:0.86rem">
+                    ${res.error}
+                </div>
+            `;
+            return;
+        }
+
+        if (!res.insights || res.insights.length === 0) {
+            container.innerHTML = `
+                <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;color:#6ee7b7">
+                    <span style="font-size:1.5rem">✅</span>
+                    <div>
+                        <strong style="color:#a7f3d0;font-size:0.92rem">Your finances look healthy!</strong>
+                        <div style="font-size:0.83rem;margin-top:2px;color:var(--text2)">No critical financial alerts or major spending spikes detected.</div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const sevStyles = {
+            HIGH:     { bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.4)',  badgeBg: 'rgba(239,68,68,0.2)',  badgeClr: '#ef4444', badgeText: '🔴 HIGH PRIORITY' },
+            MEDIUM:   { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)', badgeBg: 'rgba(245,158,11,0.2)', badgeClr: '#f59e0b', badgeText: '⚠️ ATTENTION' },
+            LOW:      { bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.3)', badgeBg: 'rgba(99,102,241,0.2)', badgeClr: '#818cf8', badgeText: '💡 SUGGESTION' },
+            POSITIVE: { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', badgeBg: 'rgba(16,185,129,0.2)', badgeClr: '#34d399', badgeText: '✅ GOOD NEWS' }
+        };
+
+        container.innerHTML = res.insights.map(item => {
+            const st = sevStyles[item.severity] || sevStyles.LOW;
+            return `
+                <div style="background:${st.bg};border:1px solid ${st.border};border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <strong style="color:var(--text);font-size:0.96rem">${item.title}</strong>
+                        <span style="background:${st.badgeBg};color:${st.badgeClr};font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:10px">${st.badgeText}</span>
+                    </div>
+                    <div style="font-size:0.86rem;color:var(--text2);line-height:1.4">
+                        ${item.message}
+                    </div>
+                    <div style="font-size:0.84rem;color:var(--text);background:rgba(15,23,42,0.6);padding:8px 12px;border-radius:6px;border-left:3px solid ${st.badgeClr}">
+                        💡 <strong>Recommendation:</strong> ${item.recommendation}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (err) {
+        container.innerHTML = `
+            <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px;color:#fca5a5;font-size:0.86rem">
+                ⚠️ AI financial insights are currently unavailable.
+            </div>
+        `;
+    }
+}
+
+// ─── SPENDING PREDICTION & FORECAST (LINEAR REGRESSION) ───────────────────────
+async function loadForecast() {
+    const container = document.getElementById('ai-forecast-container');
+    if (!container) return;
+
+    try {
+        const res = await apiGet('/api/ai/spending-forecast');
+
+        if (res.status === 'insufficient_data') {
+            container.innerHTML = `
+                <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;color:#c7d2fe">
+                    <span style="font-size:1.5rem">ℹ️</span>
+                    <div>
+                        <strong style="color:#e0e7ff;font-size:0.92rem">Not enough historical data to generate forecast</strong>
+                        <div style="font-size:0.83rem;margin-top:2px;color:var(--text2)">${res.message || 'Add at least 3 months of historical expenses to generate a reliable spending forecast.'}</div>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        if (res.error) {
+            container.innerHTML = `
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px;color:#fca5a5;font-size:0.86rem">
+                    ${res.error}
+                </div>
+            `;
+            return;
+        }
+
+        const trendMap = {
+            increasing: '<span style="color:#ef4444;font-weight:700">↗ Spending Trend: Increasing</span>',
+            decreasing: '<span style="color:#10b981;font-weight:700">↘ Spending Trend: Decreasing</span>',
+            stable:     '<span style="color:#3b82f6;font-weight:700">➡️ Spending Trend: Stable</span>'
+        };
+
+        const fc = res.forecast || {};
+        const catForecastsHtml = (res.categoryForecasts && res.categoryForecasts.length > 0) ? `
+            <div style="margin-top:14px;background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px">
+                <div style="font-size:0.85rem;font-weight:700;color:#a5b4fc;margin-bottom:8px">📊 Expected Category Breakdown (${fc.month || 'Next Month'})</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:8px;font-size:0.82rem">
+                    ${res.categoryForecasts.map(c => `
+                        <div style="background:rgba(30,41,59,0.8);padding:8px 10px;border-radius:6px;display:flex;justify-content:space-between;align-items:center">
+                            <span style="color:var(--text2)">${CAT_ICONS[c.category]||''} ${c.category}:</span>
+                            <strong style="color:var(--text)">₹${fmt(c.predictedAmount)}</strong>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
+
+        container.innerHTML = `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch">
+                <div style="background:rgba(30,41,59,0.8);border:1px solid rgba(99,102,241,0.25);border-radius:12px;padding:16px">
+                    <div style="font-size:0.82rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Next Month Estimated Spending (${fc.month || 'Next Month'})</div>
+                    <div style="font-size:2rem;font-weight:800;color:#818cf8;margin:6px 0">₹${fmt(fc.predictedAmount || 0)}</div>
+                    <div style="font-size:0.85rem;margin-bottom:6px">${trendMap[res.trend] || trendMap.stable}</div>
+                    <div style="font-size:0.82rem;color:var(--text2);line-height:1.5">
+                        Historical Average: <strong>₹${fmt(res.historicalAverage || 0)}</strong><br>
+                        Estimated Range: <strong>₹${fmt(fc.rangeMin || 0)} – ₹${fmt(fc.rangeMax || 0)}</strong>
+                    </div>
+                </div>
+
+                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:center">
+                    <div style="font-size:0.88rem;font-weight:700;color:#e0e7ff;margin-bottom:6px">💡 AI Forecast Analysis</div>
+                    <div style="font-size:0.84rem;color:var(--text2);line-height:1.5">
+                        ${res.explanation || 'Forecast calculated using Linear Regression on monthly spending history.'}
+                    </div>
+                </div>
+            </div>
+            ${catForecastsHtml}
+        `;
+
+    } catch (err) {
+        container.innerHTML = `
+            <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px;color:#fca5a5;font-size:0.86rem">
+                ⚠️ AI spending forecast is currently unavailable.
+            </div>
+        `;
+    }
 }
 
 // ─── RENDER STATS ─────────────────────────────────────────────────────────────
@@ -345,6 +581,9 @@ function expenseRow(e, compact = false) {
     const c    = CAT_COLORS[e.category] || '#6b7280';
     const icon = CAT_ICONS[e.category]  || '💼';
     const date = new Date(e.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const typeBadge = e.transactionType === 'credit'
+        ? `<span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);margin-left:4px">💰 Income</span>`
+        : `<span class="badge" style="background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.25);margin-left:4px">💸 Expense</span>`;
     const acts = compact ? '' : `
         <td>
             <div style="display:flex;gap:6px">
@@ -354,8 +593,11 @@ function expenseRow(e, compact = false) {
         </td>`;
     return `<tr>
         <td class="date-cell">${date}</td>
-        <td><span class="badge" style="background:${c}1a;color:${c};border:1px solid ${c}33">${icon} ${e.category}</span></td>
-        <td class="amount-cell">₹${fmt(e.amount)}</td>
+        <td>
+            <span class="badge" style="background:${c}1a;color:${c};border:1px solid ${c}33">${icon} ${e.category}</span>
+            ${typeBadge}
+        </td>
+        <td class="amount-cell">${e.transactionType === 'credit' ? '+' : ''}₹${fmt(e.amount)}</td>
         <td class="desc-cell">${e.description || '<span style="color:var(--text3)">—</span>'}</td>
         ${acts}
     </tr>`;
@@ -379,15 +621,37 @@ function renderFullTransactions(expenses) {
     tbody.innerHTML = expenses.map(e => expenseRow(e, false)).join('');
 }
 
+const CAT_MAP = {
+    'Food': 'Food & Dining',
+    'Food & Dining': 'Food & Dining',
+    'Transport': 'Transport',
+    'Travel': 'Transport',
+    'Shopping': 'Shopping',
+    'Entertainment': 'Entertainment',
+    'Bills': 'Utilities',
+    'Utilities': 'Utilities',
+    'Healthcare': 'Health',
+    'Health': 'Health',
+    'Education': 'Education',
+    'Housing': 'Housing',
+    'Subscriptions': 'Subscriptions',
+    'Other': 'Other'
+};
+
+let currentAiData = null;
+
 // ─── MODAL ────────────────────────────────────────────────────────────────────
 function openAddModal() {
     state.editingId = null;
+    currentAiData = null;
     document.getElementById('modal-title').textContent = '➕ Add Expense';
     document.getElementById('expense-form').reset();
     document.getElementById('expense-date').value = new Date().toISOString().split('T')[0];
     const badge = document.getElementById('ai-category-badge');
-    badge.style.display = 'none';
-    badge.textContent   = '';
+    if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
+    const aiCard = document.getElementById('ai-analysis-card');
+    if (aiCard) aiCard.classList.add('hidden');
+    document.getElementById('submit-expense-btn').textContent = 'Confirm & Save';
     document.getElementById('expense-modal').classList.remove('hidden');
 }
 
@@ -395,14 +659,21 @@ function openEditModal(id) {
     const e = state.expenses.find(x => x._id === id);
     if (!e) return;
     state.editingId = id;
+    currentAiData = {
+        merchant: e.merchant,
+        confidence: e.aiConfidence,
+        transactionType: e.transactionType || 'debit'
+    };
     document.getElementById('modal-title').textContent          = '✏️ Edit Expense';
     document.getElementById('expense-amount').value             = e.amount;
     document.getElementById('expense-category').value           = e.category;
     document.getElementById('expense-description').value        = e.description || '';
     document.getElementById('expense-date').value               = new Date(e.date).toISOString().split('T')[0];
     const badge = document.getElementById('ai-category-badge');
-    badge.style.display = 'none';
-    badge.textContent   = '';
+    if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
+    const aiCard = document.getElementById('ai-analysis-card');
+    if (aiCard) aiCard.classList.add('hidden');
+    document.getElementById('submit-expense-btn').textContent = 'Confirm & Save';
     document.getElementById('expense-modal').classList.remove('hidden');
 }
 
@@ -410,14 +681,27 @@ function closeModal() {
     document.getElementById('expense-modal').classList.add('hidden');
 }
 
+// Update category display in AI result card if user changes selection
+document.getElementById('expense-category').addEventListener('change', function() {
+    const cat = this.value;
+    const resCat = document.getElementById('ai-res-category');
+    if (resCat) {
+        resCat.textContent = (CAT_ICONS[cat] || '') + ' ' + cat;
+    }
+});
+
 // Form submit
 document.getElementById('expense-form').addEventListener('submit', async function (ev) {
     ev.preventDefault();
     const data = {
-        amount:      parseFloat(document.getElementById('expense-amount').value),
-        category:    document.getElementById('expense-category').value,
-        description: document.getElementById('expense-description').value.trim(),
-        date:        document.getElementById('expense-date').value
+        amount:          parseFloat(document.getElementById('expense-amount').value),
+        category:        document.getElementById('expense-category').value,
+        description:     document.getElementById('expense-description').value.trim(),
+        merchant:        currentAiData ? (currentAiData.merchant || '') : '',
+        transactionType: (currentAiData && currentAiData.transactionType) ? currentAiData.transactionType : 'debit',
+        aiCategorized:   Boolean(currentAiData),
+        aiConfidence:    currentAiData ? (currentAiData.confidence || 0) : 0,
+        date:            document.getElementById('expense-date').value
     };
     if (!data.amount || data.amount <= 0) { toast('Enter a valid amount', 'error'); return; }
 
@@ -439,7 +723,7 @@ document.getElementById('expense-form').addEventListener('submit', async functio
         toast('Failed to save: ' + err.message, 'error');
     } finally {
         btn.disabled    = false;
-        btn.textContent = '💾 Save Expense';
+        btn.textContent = 'Confirm & Save';
     }
 });
 
@@ -456,66 +740,180 @@ async function deleteExpense(id) {
 // ─── AI CATEGORIZE ────────────────────────────────────────────────────────────
 async function aiCategorize() {
     const desc = document.getElementById('expense-description').value.trim();
-    if (!desc) { toast('Enter a description first', 'info'); return; }
+    if (!desc) { toast('Enter an expense description first', 'info'); return; }
 
     const btn       = document.getElementById('ai-btn');
     btn.disabled    = true;
-    btn.textContent = '⏳';
+    btn.textContent = '🤖 AI is analyzing your expense...';
 
     try {
-        const result = await apiPost('/api/ai-categorize', { description: desc });
-        document.getElementById('expense-category').value = result.category;
+        const result = await apiPost('/api/ai/categorize-expense', { description: desc });
+        
+        if (result.error) {
+            toast(result.error, 'error');
+            return;
+        }
+
+        const rawCat = result.category || 'Other';
+        const mappedCat = CAT_MAP[rawCat] || (CATEGORIES.includes(rawCat) ? rawCat : 'Other');
+        
+        // Auto-fill amount if detected
+        if (result.amount && result.amount > 0) {
+            document.getElementById('expense-amount').value = result.amount;
+        }
+        
+        // Auto-fill category
+        document.getElementById('expense-category').value = mappedCat;
+
+        // Save current AI data for metadata persistence
+        currentAiData = {
+            merchant: result.merchant || 'Unknown',
+            confidence: result.confidence || 0.80
+        };
+
+        // Display AI Analysis Card
+        const card = document.getElementById('ai-analysis-card');
+        if (card) {
+            document.getElementById('ai-res-merchant').textContent = result.merchant || 'Unknown';
+            document.getElementById('ai-res-amount').textContent   = result.amount ? '₹' + fmt(result.amount) : '—';
+            document.getElementById('ai-res-category').textContent = (CAT_ICONS[mappedCat] || '') + ' ' + mappedCat;
+            
+            const confPct = Math.round((result.confidence || 0.80) * 100);
+            document.getElementById('ai-confidence-badge').textContent = `Confidence: ${confPct}%`;
+            card.classList.remove('hidden');
+        }
 
         const badge = document.getElementById('ai-category-badge');
-        badge.textContent   = result.source === 'gemini-ai' ? '✨ Gemini AI' : '🧠 Smart Match';
-        badge.style.display = 'inline-flex';
-        toast(`Category set: ${result.category}`, 'success');
-    } catch (err) { toast('Categorization failed', 'error'); }
-    finally {
+        if (badge) {
+            badge.textContent   = '🤖 Real AI ML Model';
+            badge.style.display = 'inline-flex';
+        }
+
+        toast(`AI Analysis complete! Category: ${mappedCat} (${Math.round((result.confidence || 0.80) * 100)}%)`, 'success');
+    } catch (err) {
+        toast(err.message || '⚠️ AI service unavailable. Please make sure the Python AI service is running.', 'error');
+    } finally {
         btn.disabled    = false;
-        btn.textContent = '✨ AI';
+        btn.textContent = '✨ Categorize with AI';
     }
 }
 
 // ─── SMS PARSER ───────────────────────────────────────────────────────────────
 async function parseSMS() {
     const msg = document.getElementById('sms-input').value.trim();
-    if (!msg) { toast('Paste an SMS message first', 'info'); return; }
+    if (!msg) { toast('Please paste an SMS first.', 'info'); return; }
 
     const btn       = document.getElementById('parse-sms-btn');
     btn.disabled    = true;
-    btn.textContent = '⏳ Parsing...';
+    btn.textContent = '🤖 AI is analyzing your SMS...';
 
     try {
-        const result = await apiPost('/api/parse-sms', { message: msg });
-        document.getElementById('sms-amount').textContent   = '₹' + fmt(result.amount || 0);
-        document.getElementById('sms-category').textContent = (CAT_ICONS[result.category] || '') + ' ' + result.category;
-        document.getElementById('sms-result').classList.add('visible');
+        const result = await apiPost('/api/parse-sms', { sms: msg });
+        
+        if (result.error) {
+            toast(result.error, 'error');
+            return;
+        }
+
+        const rawCat = result.category || 'Other';
+        const mappedCat = CAT_MAP[rawCat] || (CATEGORIES.includes(rawCat) ? rawCat : 'Other');
+        result.mappedCategory = mappedCat;
         window._smsResult = result;
 
-        if (!result.amount) toast('Amount not detected — check the SMS format', 'info');
-        else                 toast('SMS parsed successfully!', 'success');
-    } catch (err) { toast('SMS parsing failed', 'error'); }
-    finally {
+        // Render card values
+        document.getElementById('sms-merchant-val').textContent = result.merchant || 'Unknown';
+        document.getElementById('sms-amount-val').textContent   = '₹' + fmt(result.amount || 0);
+        document.getElementById('sms-date-val').textContent     = result.date || '—';
+        document.getElementById('sms-type-val').textContent     = result.transactionType === 'credit' ? '💰 Credit (Income)' : '💸 Debit (Expense)';
+        document.getElementById('sms-category-val').textContent = (CAT_ICONS[mappedCat] || '') + ' ' + mappedCat;
+        
+        const confPct = Math.round((result.confidence || 0.80) * 100);
+        document.getElementById('sms-confidence-badge').textContent = `Confidence: ${confPct}%`;
+
+        // Duplicate warning banner
+        const dupBanner = document.getElementById('sms-dup-warning');
+        if (dupBanner) {
+            if (result.isDuplicate) dupBanner.classList.remove('hidden');
+            else dupBanner.classList.add('hidden');
+        }
+
+        // Credit notice banner
+        const creditBanner = document.getElementById('sms-credit-notice');
+        if (creditBanner) {
+            if (result.transactionType === 'credit') creditBanner.classList.remove('hidden');
+            else creditBanner.classList.add('hidden');
+        }
+
+        document.getElementById('sms-result').classList.remove('hidden');
+        document.getElementById('sms-result').classList.add('visible');
+        toast('SMS parsed successfully!', 'success');
+    } catch (err) {
+        toast(err.message || '⚠️ AI service unavailable. Please make sure the Python AI service is running.', 'error');
+    } finally {
         btn.disabled    = false;
-        btn.textContent = '🔍 Parse SMS';
+        btn.textContent = '🤖 Analyze SMS';
     }
 }
 
-function addSMSAsExpense() {
+async function addSMSAsExpense() {
     if (!window._smsResult) return;
-    const { amount, category } = window._smsResult;
-    const smsText = document.getElementById('sms-input').value.substring(0, 80);
+    const res = window._smsResult;
+
+    const data = {
+        amount:          res.amount,
+        category:        res.mappedCategory || 'Other',
+        merchant:        res.merchant || '',
+        description:     res.rawText || '',
+        transactionType: res.transactionType || 'debit',
+        aiCategorized:   true,
+        aiConfidence:    res.confidence || 0.80,
+        date:            res.date ? new Date(res.date).toISOString() : new Date().toISOString()
+    };
+
+    try {
+        await apiPost('/api/expenses', data);
+        toast(res.transactionType === 'credit' ? 'Credit transaction saved! 💰' : 'Expense saved from SMS! ✅', 'success');
+        const smsResultEl = document.getElementById('sms-result');
+        smsResultEl.classList.remove('visible');
+        smsResultEl.classList.add('hidden');
+        document.getElementById('sms-input').value = '';
+        window._smsResult = null;
+        await Promise.all([loadStats(), loadExpenses()]);
+    } catch (err) {
+        toast('Failed to save SMS expense: ' + err.message, 'error');
+    }
+}
+
+function editSMSAsExpense() {
+    if (!window._smsResult) return;
+    const res = window._smsResult;
 
     navigate('overview');
     state.editingId = null;
-    document.getElementById('modal-title').textContent          = '➕ Add Expense';
-    document.getElementById('expense-form').reset();
-    document.getElementById('expense-amount').value             = amount || '';
-    document.getElementById('expense-category').value           = category || 'Other';
-    document.getElementById('expense-description').value        = 'SMS: ' + smsText;
-    document.getElementById('expense-date').value               = new Date().toISOString().split('T')[0];
-    document.getElementById('ai-category-badge').style.display  = 'none';
+    currentAiData = {
+        merchant: res.merchant,
+        confidence: res.confidence,
+        transactionType: res.transactionType || 'debit'
+    };
+    
+    document.getElementById('modal-title').textContent          = '✏️ Confirm & Edit Expense';
+    document.getElementById('expense-amount').value             = res.amount || '';
+    document.getElementById('expense-category').value           = res.mappedCategory || 'Other';
+    document.getElementById('expense-description').value        = res.rawText || '';
+    document.getElementById('expense-date').value               = res.date || new Date().toISOString().split('T')[0];
+    
+    const badge = document.getElementById('ai-category-badge');
+    if (badge) { badge.textContent = '🤖 Real AI SMS Scan'; badge.style.display = 'inline-flex'; }
+    
+    const card = document.getElementById('ai-analysis-card');
+    if (card) {
+        document.getElementById('ai-res-merchant').textContent = res.merchant || 'Unknown';
+        document.getElementById('ai-res-amount').textContent   = res.amount ? '₹' + fmt(res.amount) : '—';
+        document.getElementById('ai-res-category').textContent = (CAT_ICONS[res.mappedCategory] || '') + ' ' + res.mappedCategory;
+        document.getElementById('ai-confidence-badge').textContent = `Confidence: ${Math.round((res.confidence || 0.80) * 100)}%`;
+        card.classList.remove('hidden');
+    }
+
     document.getElementById('expense-modal').classList.remove('hidden');
 }
 
@@ -654,6 +1052,8 @@ document.getElementById('modal-close-btn').addEventListener('click', closeModal)
 document.getElementById('ai-btn').addEventListener('click',          aiCategorize);
 document.getElementById('parse-sms-btn').addEventListener('click',   parseSMS);
 document.getElementById('add-sms-expense-btn').addEventListener('click', addSMSAsExpense);
+const editSmsBtn = document.getElementById('edit-sms-expense-btn');
+if (editSmsBtn) editSmsBtn.addEventListener('click', editSMSAsExpense);
 document.getElementById('budget-form').addEventListener('submit',    saveBudget);
 
 // Close modal on overlay click

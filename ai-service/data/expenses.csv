@@ -1,0 +1,150 @@
+description,category
+"swiggy food order",Food
+"swiggy",Food
+"paid at swiggy",Food
+"paid 450 at swiggy",Food
+"paid in swiggy",Food
+"zomato restaurant delivery",Food
+"zomato",Food
+"paid at zomato",Food
+"pizza restaurant order",Food
+"dominos pizza",Food
+"grocery store purchase",Food
+"bigbasket groceries online",Food
+"blinkit quick delivery food items",Food
+"dmart supermarket groceries",Food
+"starbucks coffee cafe",Food
+"mcdonalds burger meal",Food
+"kfc chicken dinner",Food
+"subway sandwich lunch",Food
+"cafe coffee day drinks",Food
+"restaurant dinner payment",Food
+"swiggy instamart vegetables",Food
+"food panda order",Food
+"dominos pizza delivery",Food
+"dhabha lunch payment",Food
+"ice cream parlour dessert",Food
+"tea stall hot beverages",Food
+"lunch at restaurant",Food
+"dinner with family food",Food
+"coffee shop payment",Food
+"amazon purchase online",Shopping
+"amazon",Shopping
+"paid on amazon",Shopping
+"amazon purchase 3500",Shopping
+"flipkart order electronics",Shopping
+"flipkart",Shopping
+"paid flipkart",Shopping
+"shopping mall clothes purchase",Shopping
+"myntra apparel order",Shopping
+"ajio fashion shopping",Shopping
+"zara clothing store",Shopping
+"h&m retail purchase",Shopping
+"shoe store footwear",Shopping
+"electronics store laptop buy",Shopping
+"meesho online shop",Shopping
+"nykaa cosmetics beauty",Shopping
+"supermarket household goods",Shopping
+"decathlon sports goods",Shopping
+"croma electronics purchase",Shopping
+"reliance digital gadgets",Shopping
+"boutique dress purchase",Shopping
+"gift shop items",Shopping
+"jewelry store purchase",Shopping
+"furniture shop buy table",Shopping
+"toy store purchase",Shopping
+"uber ride cab payment",Transport
+"uber",Transport
+"uber ride",Transport
+"2500 uber ride",Transport
+"paid rs 2500 to uber",Transport
+"ola cab taxi fare",Transport
+"ola ride",Transport
+"metro ticket card recharge",Transport
+"auto rickshaw fare paid",Transport
+"petrol pump fuel fill",Transport
+"diesel fill station",Transport
+"toll plaza road tax",Transport
+"parking fee mall garage",Transport
+"rapido bike taxi ride",Transport
+"bus ticket fare travel",Transport
+"train ticket railway booking",Transport
+"vehicle service mechanic repair",Transport
+"car wash payment",Transport
+"ev charging station fee",Transport
+"local train season pass",Transport
+"taxi ride fare airport transfer",Transport
+"netflix subscription monthly",Entertainment
+"netflix",Entertainment
+"movie ticket pvr inox cinema",Entertainment
+"spotify music premium",Entertainment
+"amazon prime video subscription",Entertainment
+"hotstar disney sports stream",Entertainment
+"bookmyshow cinema tickets",Entertainment
+"gaming lounge arcade play",Entertainment
+"playstation store game download",Entertainment
+"youtube premium subscription",Entertainment
+"concert live event ticket",Entertainment
+"amusement park entry fee",Entertainment
+"bowling alley games",Entertainment
+"steam game store purchase",Entertainment
+"theatre show entry ticket",Entertainment
+"cinema ticket",Entertainment
+"electricity bill power payment",Bills
+"electricity bill",Bills
+"water bill municipal charges",Bills
+"water bill",Bills
+"mobile recharge airtel jio bsnl",Bills
+"mobile recharge",Bills
+"broadband internet wifi bill",Bills
+"piped gas bill utility",Bills
+"dth tv recharge tata play",Bills
+"postpaid mobile bill payment",Bills
+"municipal property tax bill",Bills
+"cylinder lpg gas booking",Bills
+"housing society maintenance bill",Bills
+"hospital payment doctor fees",Healthcare
+"hospital payment",Healthcare
+"pharmacy medicine medical store",Healthcare
+"pharmacy",Healthcare
+"dental clinic checkup fees",Healthcare
+"apollo pharmacy medicine purchase",Healthcare
+"blood test diagnostic lab fee",Healthcare
+"eye clinic consultation glasses",Healthcare
+"health insurance premium policy",Healthcare
+"physiotherapy session clinic",Healthcare
+"dermatologist skin clinic fee",Healthcare
+"medical test report radiology",Healthcare
+"college fees semester payment",Education
+"college fees",Education
+"school tuition fees payment",Education
+"udemy course certification online",Education
+"coursera online course subscription",Education
+"book store textbooks purchase",Education
+"coaching institute tuition fee",Education
+"stationery notebook items buy",Education
+"exam fee application registration",Education
+"byjus learning subscription",Education
+"university hostel mess fee",Education
+"flight ticket airline booking",Travel
+"flight ticket",Travel
+"hotel booking room reservation",Travel
+"hotel booking",Travel
+"makemytrip travel package",Travel
+"goibibo hotel stay",Travel
+"resort booking holiday trip",Travel
+"tourist visa processing fee",Travel
+"airbnb vacation rental booking",Travel
+"international flight ticket",Travel
+"car rental self drive travel",Travel
+"sightseeing tour guide fee",Travel
+"passport application fee",Other
+"bank account service charges",Other
+"atm cash withdrawal fee",Other
+"courier delivery shipping fee",Other
+"legal notary lawyer fees",Other
+"charity donation contribution",Other
+"general service charge fee",Other
+"pet food vet clinic doctor",Other
+"miscellaneous expense payment",Other
+"office stationery supplies",Other

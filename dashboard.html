@@ -118,6 +118,41 @@
                     <div class="stat-value" style="font-size:1.1rem" id="stat-top">—</div>
                     <div class="stat-sub" id="stat-top-sub">highest spending</div>
                 </div>
+            <!-- AI Financial Insights Card (Phase 5) -->
+            <div class="card" style="margin-bottom:20px;border:1px solid rgba(16,185,129,0.3);background:rgba(15,23,42,0.95);box-shadow:0 4px 20px rgba(0,0,0,0.4)">
+                <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:1.05rem;font-weight:700;color:#6ee7b7">💡 AI Financial Insights &amp; Recommendations</span>
+                    <span style="font-size:0.75rem;background:rgba(16,185,129,0.15);color:#34d399;padding:4px 10px;border-radius:12px;border:1px solid rgba(16,185,129,0.3)">AI Synthesis Engine</span>
+                </div>
+                <div id="ai-insights-container" style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
+                    <div style="font-size:0.88rem;color:var(--text2);padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
+                        ⏳ Generating personalized financial insights &amp; recommendations...
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Spending Alerts Card -->
+            <div class="card" style="margin-bottom:20px;border:1px solid rgba(239,68,68,0.25);background:rgba(15,23,42,0.95);box-shadow:0 4px 20px rgba(0,0,0,0.4)">
+                <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:1.05rem;font-weight:700;color:#fca5a5">🚨 AI Unusual Spending Alerts</span>
+                    <span style="font-size:0.75rem;background:rgba(239,68,68,0.15);color:#f87171;padding:4px 10px;border-radius:12px;border:1px solid rgba(239,68,68,0.3)">Isolation Forest ML</span>
+                </div>
+                <div id="ai-anomalies-container" style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+                    <div style="font-size:0.88rem;color:var(--text2);padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
+                        ⏳ Analyzing spending patterns with Isolation Forest...
+                    </div>
+                </div>
+            <!-- AI Spending Forecast Card -->
+            <div class="card" style="margin-bottom:20px;border:1px solid rgba(99,102,241,0.3);background:rgba(15,23,42,0.95);box-shadow:0 4px 20px rgba(0,0,0,0.4)">
+                <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:1.05rem;font-weight:700;color:#a5b4fc">📈 AI Spending Forecast</span>
+                    <span style="font-size:0.75rem;background:rgba(99,102,241,0.15);color:#818cf8;padding:4px 10px;border-radius:12px;border:1px solid rgba(99,102,241,0.3)">Linear Regression ML</span>
+                </div>
+                <div id="ai-forecast-container" style="margin-top:12px">
+                    <div style="font-size:0.88rem;color:var(--text2);padding:12px;background:rgba(255,255,255,0.03);border-radius:8px">
+                        ⏳ Calculating spending forecast with Linear Regression...
+                    </div>
+                </div>
             </div>
 
             <!-- Charts -->
@@ -289,25 +324,43 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
 
                 <div class="card">
-                    <div class="card-title">Paste Your Bank SMS</div>
+                    <div class="card-title">📩 AI SMS Expense Scanner</div>
                     <div class="form-group">
-                        <label>SMS Message</label>
-                        <textarea id="sms-input" rows="5" placeholder="Paste your bank SMS here...&#10;&#10;Example: Your account has been debited Rs. 500 for purchase at Swiggy. Available balance: Rs. 12,500."></textarea>
+                        <label>Paste your bank / payment SMS:</label>
+                        <textarea id="sms-input" rows="4" placeholder="Paste your bank SMS here...&#10;&#10;Example: Dear Customer, your account has been debited by Rs. 450 at Swiggy on 13-Aug-2026."></textarea>
                     </div>
-                    <button class="btn btn-primary w-full" id="parse-sms-btn" style="width:100%">🔍 Parse SMS</button>
+                    <button class="btn btn-primary w-full" id="parse-sms-btn" style="width:100%;padding:12px;font-size:0.95rem">🤖 Analyze SMS</button>
 
-                    <div class="sms-result" id="sms-result">
-                        <div class="sms-detected">
-                            <div class="sms-det-item">
-                                <div class="sms-det-label">Detected Amount</div>
-                                <div class="sms-det-value" id="sms-amount">₹0</div>
-                            </div>
-                            <div class="sms-det-item">
-                                <div class="sms-det-label">Category</div>
-                                <div class="sms-det-value" id="sms-category">—</div>
-                            </div>
+                    <!-- AI Detected Expense Result Card -->
+                    <div class="sms-result hidden" id="sms-result" style="margin-top:16px;background:rgba(15,23,42,0.95);border:1px solid rgba(99,102,241,0.4);border-radius:12px;padding:16px;box-shadow:0 4px 20px rgba(0,0,0,0.4)">
+                        
+                        <!-- Duplicate Warning Banner -->
+                        <div id="sms-dup-warning" class="hidden" style="margin-bottom:12px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-weight:600">
+                            ⚠️ This transaction may already exist.
                         </div>
-                        <button class="btn btn-success" style="width:100%" id="add-sms-expense-btn">✅ Add as Expense</button>
+
+                        <!-- Credit Notice Banner -->
+                        <div id="sms-credit-notice" class="hidden" style="margin-bottom:12px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-weight:600">
+                            💰 Credit Transaction Detected (Income). Not automatically classified as an expense.
+                        </div>
+
+                        <div style="font-weight:700;color:#a5b4fc;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;font-size:1rem">
+                            <span>🤖 AI Detected Transaction</span>
+                            <span id="sms-confidence-badge" style="font-size:0.78rem;font-weight:600;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:3px 10px;border-radius:12px">Confidence: 0%</span>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.88rem;color:var(--text);margin-bottom:14px">
+                            <div><span style="color:var(--text3)">Merchant:</span> <strong id="sms-merchant-val">—</strong></div>
+                            <div><span style="color:var(--text3)">Amount:</span> <strong id="sms-amount-val">₹0</strong></div>
+                            <div><span style="color:var(--text3)">Date:</span> <strong id="sms-date-val">—</strong></div>
+                            <div><span style="color:var(--text3)">Type:</span> <strong id="sms-type-val">—</strong></div>
+                            <div style="grid-column: span 2"><span style="color:var(--text3)">Category:</span> <strong id="sms-category-val">—</strong></div>
+                        </div>
+
+                        <div style="display:flex;gap:10px">
+                            <button class="btn btn-success" style="flex:1;padding:10px" id="add-sms-expense-btn">Confirm &amp; Save</button>
+                            <button class="btn btn-secondary" style="padding:10px" id="edit-sms-expense-btn">Edit</button>
+                        </div>
                     </div>
                 </div>
 
@@ -435,13 +488,17 @@
             <div class="form-group">
                 <label>Category</label>
                 <select id="expense-category">
+                    <option value="Food">🍔 Food</option>
                     <option value="Food &amp; Dining">🍔 Food &amp; Dining</option>
                     <option value="Transport">🚗 Transport</option>
                     <option value="Shopping">🛍️ Shopping</option>
                     <option value="Entertainment">🎮 Entertainment</option>
-                    <option value="Health">💊 Health</option>
+                    <option value="Bills">⚡ Bills</option>
                     <option value="Utilities">⚡ Utilities</option>
+                    <option value="Healthcare">💊 Healthcare</option>
+                    <option value="Health">💊 Health</option>
                     <option value="Education">📚 Education</option>
+                    <option value="Travel">✈️ Travel</option>
                     <option value="Housing">🏠 Housing</option>
                     <option value="Subscriptions">📱 Subscriptions</option>
                     <option value="Other">💼 Other</option>
@@ -450,17 +507,32 @@
 
             <div class="form-group">
                 <label>
-                    Description
+                    Description / Expense Text *
                     <span class="ai-label" id="ai-category-badge" style="display:none"></span>
                 </label>
                 <div class="desc-row">
-                    <textarea id="expense-description" placeholder="What did you spend on? (optional — AI can categorize from this)" rows="2"></textarea>
-                    <button type="button" class="btn btn-ai btn-sm" id="ai-btn" title="Let AI pick the best category from your description" style="white-space:nowrap;align-self:flex-end">✨ AI</button>
+                    <textarea id="expense-description" placeholder="e.g. Paid ₹450 at Swiggy or ₹2500 Uber ride" rows="2"></textarea>
+                    <button type="button" class="btn btn-ai btn-sm" id="ai-btn" title="Let AI determine merchant, amount, category and confidence" style="white-space:nowrap;align-self:flex-end">✨ Categorize with AI</button>
                 </div>
             </div>
 
+            <!-- AI Analysis Result Card -->
+            <div id="ai-analysis-card" class="ai-analysis-card hidden" style="margin-bottom: 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 12px; padding: 14px 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                <div style="font-weight: 700; color: #a5b4fc; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 1rem;">
+                    <span>🤖 AI Analysis</span>
+                    <span id="ai-confidence-badge" style="font-size: 0.78rem; font-weight: 600; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 3px 10px; border-radius: 12px;">Confidence: 0%</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem; color: var(--text);">
+                    <div><span style="color:var(--text3)">Merchant:</span> <strong id="ai-res-merchant">—</strong></div>
+                    <div><span style="color:var(--text3)">Amount:</span> <strong id="ai-res-amount">—</strong></div>
+                    <div><span style="color:var(--text3)">Category:</span> <strong id="ai-res-category">—</strong></div>
+                    <div><span style="color:var(--text3)">Status:</span> <strong style="color: #10b981;">Ready to save</strong></div>
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text3); margin-top: 8px;">💡 You can review or edit the category above before saving.</div>
+            </div>
+
             <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px;padding:12px" id="submit-expense-btn">
-                💾 Save Expense
+                Confirm &amp; Save
             </button>
 
         </form>
@@ -472,6 +544,6 @@
 <div id="toast-container"></div>
 
 
-<script src="dashboard.js"></script>
+<script src="dashboard.js?v=4"></script>
 </body>
 </html>
